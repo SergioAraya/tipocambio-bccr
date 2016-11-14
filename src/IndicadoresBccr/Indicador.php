@@ -59,6 +59,23 @@ class Indicador
         }
         return (float)$tipoCambio;
     }
+    
+        //Regrasa el tipo de cambio de Compra del BCCR
+    public static function obtenerTipoCambioEuro($tipo = "", $fecha = "")
+    {
+        date_default_timezone_set('America/Costa_Rica');
+        $fecha_tc = empty($fecha) ? date("d/m/Y") : $fecha;
+        $tipo_tc = empty($tipo) ? self::EURO : $tipo;
+        $urlWS = self::IND_ECONOM_WS . "/" . self::IND_ECONOM_METH . "?tcIndicador=" . $tipo_tc . "&tcFechaInicio=" . $fecha_tc . "&tcFechaFinal=" . $fecha_tc . "&tcNombre=tq&tnSubNiveles=N";
+        $tipoCambio = 0;
+        if (self::url_get_contents($urlWS) != false) {
+            $indWS = self::url_get_contents($urlWS);
+            $xml = simplexml_load_string($indWS);
+            $tipo_cambio = trim(strip_tags(substr($xml, strpos($xml, "<NUM_VALOR>"), strripos($xml, "</NUM_VALOR>"))));
+            $tipoCambio = number_format($tipo_cambio, 2);
+        }
+        return (float)$tipoCambio;
+    }
 
     /**
      * Convierte un monto de colones a dolares
