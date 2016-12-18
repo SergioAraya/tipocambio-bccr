@@ -129,5 +129,24 @@ class Indicador
         curl_close($ch);
         return $output;
     }
+    
+    public static function obtenerTipoCambioVentaConFecha($tipo = "", $fecha = "")
+    {
+        date_default_timezone_set('America/Costa_Rica');
+        $fecha_tc = empty($fecha) ? date("d/m/Y") : $fecha;
+        $tipo_tc = empty($tipo) ? self::VENTA : $tipo;
+
+        $urlWS = self::IND_ECONOM_WS . "/" . self::IND_ECONOM_METH . "?tcIndicador=" . $tipo_tc . "&tcFechaInicio=" . $fecha_tc . "&tcFechaFinal=" . $fecha_tc . "&tcNombre=tq&tnSubNiveles=N";
+        $tipoCambio = 0;
+
+        if (self::url_get_contents($urlWS) != false) {
+            $indWS = self::url_get_contents($urlWS);
+            $xml = simplexml_load_string($indWS);
+            $tipo_cambio = trim(strip_tags(substr($xml, strpos($xml, "<NUM_VALOR>"), strripos($xml, "</NUM_VALOR>"))));
+            $tipoCambio = number_format($tipo_cambio, 2, '.', ',');
+        }
+
+        return (float)$tipoCambio;
+    }
 
 } 
