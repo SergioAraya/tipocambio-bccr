@@ -22,8 +22,25 @@ class Indicador
      * @param string $fecha Fecha del tipo de cambio deseado
      * @return float Valor del tipo de cambio
      */
-    
-    //Regrasa el tipo de cambio de Compra del BCCR
+    public static function obtenerTipoCambioVenta($tipo = "", $fecha = "")
+    {
+        date_default_timezone_set('America/Costa_Rica');
+        $fecha_tc = empty($fecha) ? date("d/m/Y") : $fecha;
+        $tipo_tc = empty($tipo) ? self::VENTA : $tipo;
+
+        $urlWS = self::IND_ECONOM_WS . "/" . self::IND_ECONOM_METH . "?tcIndicador=" . $tipo_tc . "&tcFechaInicio=" . $fecha_tc . "&tcFechaFinal=" . $fecha_tc . "&tcNombre=tq&tnSubNiveles=N";
+        $tipoCambio = 0;
+
+        if (self::url_get_contents($urlWS) != false) {
+            $indWS = self::url_get_contents($urlWS);
+            $xml = simplexml_load_string($indWS);
+            $tipo_cambio = trim(strip_tags(substr($xml, strpos($xml, "<NUM_VALOR>"), strripos($xml, "</NUM_VALOR>"))));
+            $tipoCambio = number_format($tipo_cambio, 2, '.', ',');
+        }
+
+        return (float)$tipoCambio;
+    }
+
     public static function obtenerTipoCambioCompra($tipo = "", $fecha = "")
     {
         date_default_timezone_set('America/Costa_Rica');
@@ -37,43 +54,9 @@ class Indicador
             $indWS = self::url_get_contents($urlWS);
             $xml = simplexml_load_string($indWS);
             $tipo_cambio = trim(strip_tags(substr($xml, strpos($xml, "<NUM_VALOR>"), strripos($xml, "</NUM_VALOR>"))));
-            $tipoCambio = number_format($tipo_cambio, 2);
+            $tipoCambio = number_format($tipo_cambio, 2, '.', ',');
         }
 
-        return (float)$tipoCambio;
-    }
-    
-    //Regrasa el tipo de cambio de Venta del BCCR
-    public static function obtenerTipoCambioVenta($tipo = "", $fecha = "")
-    {
-        date_default_timezone_set('America/Costa_Rica');
-        $fecha_tc = empty($fecha) ? date("d/m/Y") : $fecha;
-        $tipo_tc = empty($tipo) ? self::VENTA : $tipo;
-        $urlWS = self::IND_ECONOM_WS . "/" . self::IND_ECONOM_METH . "?tcIndicador=" . $tipo_tc . "&tcFechaInicio=" . $fecha_tc . "&tcFechaFinal=" . $fecha_tc . "&tcNombre=tq&tnSubNiveles=N";
-        $tipoCambio = 0;
-        if (self::url_get_contents($urlWS) != false) {
-            $indWS = self::url_get_contents($urlWS);
-            $xml = simplexml_load_string($indWS);
-            $tipo_cambio = trim(strip_tags(substr($xml, strpos($xml, "<NUM_VALOR>"), strripos($xml, "</NUM_VALOR>"))));
-            $tipoCambio = number_format($tipo_cambio, 2);
-        }
-        return (float)$tipoCambio;
-    }
-    
-        //Regrasa el tipo de cambio de Compra del BCCR
-    public static function obtenerTipoCambioEuro($tipo = "", $fecha = "")
-    {
-        date_default_timezone_set('America/Costa_Rica');
-        $fecha_tc = empty($fecha) ? date("d/m/Y") : $fecha;
-        $tipo_tc = empty($tipo) ? self::EURO : $tipo;
-        $urlWS = self::IND_ECONOM_WS . "/" . self::IND_ECONOM_METH . "?tcIndicador=" . $tipo_tc . "&tcFechaInicio=" . $fecha_tc . "&tcFechaFinal=" . $fecha_tc . "&tcNombre=tq&tnSubNiveles=N";
-        $tipoCambio = 0;
-        if (self::url_get_contents($urlWS) != false) {
-            $indWS = self::url_get_contents($urlWS);
-            $xml = simplexml_load_string($indWS);
-            $tipo_cambio = trim(strip_tags(substr($xml, strpos($xml, "<NUM_VALOR>"), strripos($xml, "</NUM_VALOR>"))));
-            $tipoCambio = number_format($tipo_cambio, 2);
-        }
         return (float)$tipoCambio;
     }
 
@@ -86,7 +69,7 @@ class Indicador
     public static function convertirColonesDolares($monto)
     {
         $tipo_cambio = self::obtenerTipoCambio(self::COMPRA);
-        return ($tipo_cambio > 0) ? number_format(($monto / $tipo_cambio), 2, '.', '') : 0;
+        return ($tipo_cambio > 0) ? number_format(($monto / $tipo_cambio), 2, '.', ',') : 0;
     }
 
     /**
@@ -98,7 +81,7 @@ class Indicador
     public static function convertirDolaresColones($monto)
     {
         $tipo_cambio = self::obtenerTipoCambio(self::COMPRA);
-        return ($tipo_cambio > 0) ? number_format(($monto * $tipo_cambio), 2, '.', '') : 0;
+        return ($tipo_cambio > 0) ? number_format(($monto * $tipo_cambio), 2, '.', ',') : 0;
     }
 
     /**
@@ -107,10 +90,10 @@ class Indicador
      * @param $monto El monto a convertir
      * @return float El monto convertido
      */
-    public static function convertirDolaresEuros(){
-        $monto = self::obtenerTipoCambio(self::VENTA);
-        $tipo_cambio = self::obtenerTipoCambio(self::EURO);
-        return ($tipo_cambio > 0) ? number_format(($monto * $tipo_cambio), 2, '.', '') : 0;
+    public static function convertirDolaresEuros($tipo = "", $fecha = ""){
+        $monto = self::obtenerTipoCambioVenta(self::VENTA, $fecha);
+        $tipo_cambio = self::obtenerTipoCambioVenta(self::EURO, $fecha);
+        return ($tipo_cambio > 0) ? number_format(($monto * $tipo_cambio), 2, '.', ',') : 0;
     }
 
     /**
@@ -119,7 +102,7 @@ class Indicador
      * @return $output Respuesta del webservice
      */
     public static function url_get_contents($Url) {
-        if (!function_exists('curl_init')){ 
+        if (!function_exists('curl_init')){
             die('CURL is not installed!');
         }
         $ch = curl_init();
@@ -129,7 +112,8 @@ class Indicador
         curl_close($ch);
         return $output;
     }
-    
+
+
     public static function obtenerTipoCambioVentaConFecha($tipo = "", $fecha = "")
     {
         date_default_timezone_set('America/Costa_Rica');
@@ -148,5 +132,7 @@ class Indicador
 
         return (float)$tipoCambio;
     }
+
+}
 
 } 
