@@ -41,6 +41,25 @@ class Indicador
         return (float)$tipoCambio;
     }
 
+    public static function obtenerRelacionDolarEuro($tipo = "", $fecha = "")
+    {
+        date_default_timezone_set('America/Costa_Rica');
+        $fecha_tc = empty($fecha) ? date("d/m/Y") : $fecha;
+        $tipo_tc = empty($tipo) ? self::EURO : $tipo;
+
+        $urlWS = self::IND_ECONOM_WS . "/" . self::IND_ECONOM_METH . "?tcIndicador=" . $tipo_tc . "&tcFechaInicio=" . $fecha_tc . "&tcFechaFinal=" . $fecha_tc . "&tcNombre=tq&tnSubNiveles=N";
+        $relacionDolarEuro = 0;
+
+        if (self::url_get_contents($urlWS) != false) {
+            $indWS = self::url_get_contents($urlWS);
+            $xml = simplexml_load_string($indWS);
+            $relacionDolarEuro = trim(strip_tags(substr($xml, strpos($xml, "<NUM_VALOR>"), strripos($xml, "</NUM_VALOR>"))));
+            $relacionDolarEuro = number_format($relacionDolarEuro, 2, '.', ',');
+        }
+
+        return (float)$relacionDolarEuro;
+    }
+
     public static function obtenerTipoCambioCompra($tipo = "", $fecha = "")
     {
         date_default_timezone_set('America/Costa_Rica');
@@ -68,7 +87,7 @@ class Indicador
      */
     public static function convertirColonesDolares($monto)
     {
-        $tipo_cambio = self::obtenerTipoCambio(self::COMPRA);
+        $tipo_cambio = self::obtenerTipoCambio(self::VENTA);
         return ($tipo_cambio > 0) ? number_format(($monto / $tipo_cambio), 2, '.', ',') : 0;
     }
 
@@ -80,7 +99,7 @@ class Indicador
      */
     public static function convertirDolaresColones($monto)
     {
-        $tipo_cambio = self::obtenerTipoCambio(self::COMPRA);
+        $tipo_cambio = self::obtenerTipoCambio(self::VENTA);
         return ($tipo_cambio > 0) ? number_format(($monto * $tipo_cambio), 2, '.', ',') : 0;
     }
 
@@ -92,6 +111,12 @@ class Indicador
      */
     public static function convertirDolaresEuros($tipo = "", $fecha = ""){
         $monto = self::obtenerTipoCambioVenta(self::VENTA, $fecha);
+        $tipo_cambio = self::obtenerTipoCambioVenta(self::EURO, $fecha);
+        return ($tipo_cambio > 0) ? number_format(($monto * $tipo_cambio), 2, '.', ',') : 0;
+    }
+
+    public static function convertirDolaresEurosCompra($tipo = "", $fecha = ""){
+        $monto = self::obtenerTipoCambioVenta(self::COMPRA, $fecha);
         $tipo_cambio = self::obtenerTipoCambioVenta(self::EURO, $fecha);
         return ($tipo_cambio > 0) ? number_format(($monto * $tipo_cambio), 2, '.', ',') : 0;
     }
@@ -135,4 +160,3 @@ class Indicador
 
 }
 
-} 
